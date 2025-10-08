@@ -17,10 +17,6 @@ This repository contains tools to extract all cities visited during a cross-coun
 - `efficient_city_finder.py` - Efficient clustering approach
 - `offline_city_finder.py` - Zero API calls (major cities only)
 
-### Original Files
-- `main.py` - Original approach (high API usage)
-- `cities_to_list.py` - Simple city list converter
-
 ## 📊 Results Summary
 
 - **Total Cities Found**: 88
