@@ -1,0 +1,178 @@
+Cities visited during cross-country bike trip:
+
+ 1. 1007
+ 2. 11398
+ 3. 13800
+ 4. 2316
+ 5. 26310
+ 6. 3039
+ 7. 3218
+ 8. 3730
+ 9. 42nd "Rainbow" Infantry Division Memorial Highway
+10. 4858
+11. 51
+12. 65455
+13. 7199
+14. 77835
+15. 7914
+16. Abbott
+17. Abington
+18. Albuquerque
+19. Allentown
+20. Amboy Road
+21. Antares
+22. Apple Valley
+23. Beavercreek
+24. Bethel Township
+25. Bethlehem
+26. Bicknell
+27. Broken Arrow
+28. Brush Creek Township
+29. Bud
+30. Bullhead City
+31. Bullhead City–Kingman Highway
+32. Cajon
+33. Camp
+34. Capps
+35. Carrier Mills
+36. Cedar Crest
+37. Cedarville
+38. Chief Rancho
+39. Church Rock
+40. Coburn
+41. Continental Divide
+42. Crookton Road
+43. Crossville
+44. Crozier
+45. Dayton
+46. Deckard-Y
+47. Dexter
+48. Donegal Township
+49. Dublin Township
+50. Eagle Nest
+51. East Hanover Township
+52. East Huntingdon Township
+53. East Malone Avenue
+54. Eldorado
+55. Elizabeth Township
+56. Eros
+57. FM 1573
+58. FM 281
+59. FM 520
+60. Fairdealing
+61. Fairfield
+62. Fayetteville
+63. Flagstaff
+64. Fontana
+65. Fort Defiance Agency
+66. Freedom
+67. Frontage Road
+68. Gallup
+69. Gatewood
+70. Glendora
+71. Glenwood
+72. Golden Valley
+73. Grayridge
+74. Grayville
+75. Greenwich Township
+76. Hackensack
+77. Harmon
+78. Henderson
+79. Hennessey
+80. Hesperia
+81. Hibbard
+82. Hitt
+83. Holbrook
+84. Hualapai Veterans Highway
+85. Huntsville
+86. I 40
+87. Jack Choate Highway
+88. Jacksontown
+89. Jefferson Township
+90. Jim Thorpe Memorial Highway
+91. Keensburg
+92. Kelbaker Road
+93. Kirkersville
+94. La Junta
+95. Lilly Chapel
+96. Lincoln
+97. Lore City
+98. Los Angeles
+99. Lucerne Valley
+100. Lurgan Township
+101. Madrid
+102. Mannford Expressway
+103. Marques Haynes Highway
+104. McKibben
+105. Mesita
+106. Metal Township
+107. Mohave Valley
+108. Monroe Township
+109. Mound City
+110. Mount Olive
+111. Mount Pleasant Township
+112. Mountain Home
+113. NM 68
+114. Napier Township
+115. New Burnside
+116. New Concord
+117. New Grand Chain
+118. New Kingman-Butler
+119. New Lexington
+120. Norris City
+121. North Franklin Township
+122. Nottingham Township
+123. Old Woman Springs Road
+124. Paragon
+125. Peach Springs
+126. Petrified Forest Road
+127. Poplar Bluff
+128. Prairie Grass Trail
+129. Prescott–Flagstaff Highway
+130. Purple Heart Trail
+131. Quaker City
+132. Rabbit Road
+133. Rally Hill
+134. Rancho Cucamonga
+135. Rayado
+136. Rockaway Township
+137. SR 59
+138. San Gabriel
+139. Sand Barrens
+140. Sandia Haven
+141. Santa Monica
+142. Sapulpa
+143. Sedona
+144. Sombrillo
+145. Somerset
+146. Springer
+147. Springer Highway
+148. Stillwater
+149. Stonycreek Township
+150. Strawberry Spring
+151. Sun Valley
+152. Susquehanna Township
+153. Tesuque
+154. Thayer
+155. Thompson Corner
+156. Tulsa
+157. Tuttle
+158. Twentynine Palms
+159. US 412;AR 21
+160. US 60;US 62;MO 77
+161. US 64
+162. US 83
+163. US 87
+164. US Highway 64
+165. Upper Bern Township
+166. Valle Escondido
+167. Vienna
+168. Vincennes
+169. Viola
+170. Ware
+171. West Florence
+172. West Pennsboro Township
+173. Wheeling
+174. Winslow
+175. Yucca Valley
+176. Zanesville

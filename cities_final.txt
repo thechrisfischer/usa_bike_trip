@@ -1,0 +1,27 @@
+Cities visited during cross-country bike trip:
+
+ 1. Albuquerque
+ 2. Buffalo Township
+ 3. Burbank
+ 4. Dayton
+ 5. Donegal Township
+ 6. Easton
+ 7. Elizabeth Township
+ 8. Flagstaff
+ 9. Fontana
+10. Gallup
+11. Greenwich Township
+12. Jefferson Township
+13. Kingman
+14. Lurgan Township
+15. Napier Township
+16. New York
+17. Santa Fe
+18. Swatara Township
+19. Tahlequah
+20. Taos
+21. Taylor Township
+22. Tulsa
+23. Victorville
+24. Winslow
+25. Zanesville
