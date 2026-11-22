@@ -299,7 +299,10 @@ def render(record, names, channel):
     else:
         refs.append(f"Deployed by {person(record['actor'], names)}")
     blocks.append({"type": "context", "elements": [{"type": "mrkdwn", "text": " · ".join(refs)}]})
-    evidence = [link(pr["url"], "#" + str(pr["number"])) for pr in prs[:8]]
+    evidence = [
+        link(pr["url"], "#" + str(pr["number"]) + " " + safe(pr["title"], 120).replace("|", "¦"))
+        for pr in prs[:8]
+    ]
     evidence.append(link(record["run_url"], "Run"))
     if record.get("compare_url"):
         evidence.append(link(record["compare_url"], "Full changes"))
