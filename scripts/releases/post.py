@@ -44,7 +44,10 @@ def pages(path, key=None):
 def safe(value, limit=500):
     # Escape Slack's explicit mention/link syntax, including <!channel> and <@U…>.
     value = str(value).replace("\r", " ").replace("\n", " ")
-    return html.escape(value[:limit], quote=False).replace("@", "＠").replace("`", "'")
+    # Slack does not support backslash escapes for all mrkdwn controls. Use
+    # readable non-control glyphs instead of allowing PR prose to format posts.
+    escaped = html.escape(value[:limit], quote=False)
+    return escaped.translate(str.maketrans({"@": "＠", "`": "'", "*": "∗", "_": "＿", "~": "～"}))
 
 
 def person(login, names):
