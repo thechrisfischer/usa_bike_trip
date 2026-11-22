@@ -229,6 +229,7 @@ def records(event, repo, config):
             or pr["base"]["repo"]["full_name"] != repo
         ):
             return []
+        run_id = os.environ.get("GITHUB_RUN_ID", "0")
         return [
             {
                 "kind": "merge",
@@ -241,10 +242,7 @@ def records(event, repo, config):
                     "author": pr["user"]["login"],
                     "merger": pr["merged_by"]["login"],
                 },
-                "run_url": (
-                    f"https://github.com/{repo}/actions/runs/"
-                    f"{os.environ.get('GITHUB_RUN_ID', '0')}"
-                ),
+                "run_url": f"https://github.com/{repo}/actions/runs/{run_id}",
                 "key": f"{repo}:merge:{pr['number']}:{pr['merge_commit_sha']}",
             }
         ]
