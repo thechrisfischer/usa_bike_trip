@@ -1,0 +1,31 @@
+# Wolf Works Releases v1; generated from Wolf-Works-LLC/hq/scripts/releases/vendor-workflow.yml
+name: Labs releases
+on:
+  pull_request_target:
+    types: [closed]
+    branches: ["main"]
+permissions:
+  contents: read
+  pull-requests: read
+  actions: read
+jobs:
+  notify:
+    if: >-
+      (github.event_name == 'pull_request_target' && github.event.pull_request.merged == true) ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.name != 'Labs releases')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    continue-on-error: true
+    steps:
+      # Never execute a PR head or a workflow_run artifact with this token.
+      - uses: actions/checkout@v5
+        with:
+          ref: refs/heads/main
+          persist-credentials: false
+          sparse-checkout: scripts/releases
+      - name: Post release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WOLFWORKS_RELEASES_SLACK_TOKEN: ${{ secrets.WOLFWORKS_RELEASES_SLACK_TOKEN }}
+          RELEASES_SLACK_CHANNEL_ID: ${{ vars.RELEASES_SLACK_CHANNEL_ID }}
+        run: python3 scripts/releases/post.py

@@ -1,0 +1,10 @@
+{
+  "version": "v1",
+  "repositories": {
+    "thechrisfischer/usa_bike_trip": {
+      "delivery": "vendored",
+      "default_branch": "main",
+      "deployments": []
+    }
+  }
+}
