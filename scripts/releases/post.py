@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Wolf Works Releases v1; canonical source: Wolf-Works-LLC/hq/scripts/releases/post.py
+# Wolf Works Releases notifier v2; canonical source: Wolf-Works-LLC/hq/scripts/releases/post.py
 """Render or deliver release messages. Only trusted default-branch code runs here."""
 
 import argparse
@@ -15,7 +15,7 @@ import urllib.request
 import uuid
 from pathlib import Path
 
-VERSION = "v1"
+VERSION = "v2"
 HERE = Path(__file__).resolve().parent
 
 
@@ -60,70 +60,251 @@ def link(url, label):
     return f"<{url}|{label}>"
 
 
-def render(record, names, channel):
-    kind = record["kind"]
-    repo = safe(record["repo"])
-    labels = {
-        "merge": ("#2f7ed8", "🔵 Merged to main"),
-        "production": ("#2eb67d", "🚀 Live in production"),
-        "rollback": ("#e01e5a", "↩︎ Rolled back"),
-    }
-    color, title = labels[kind]
-    if kind == "merge":
-        title = "🔵 Merged to " + safe(record.get("branch", "main"), 100)
-    label = f" · {safe(record['target'])}" if record.get("target") else ""
-    heading = f"{title} · {repo}{label}"
-    blocks = [section(f"*{heading}*")]
-    if kind == "merge":
-        pr = record["pr"]
-        blocks.append(
-            section(
-                f"{link(pr['url'], '#' + str(pr['number']))} · {safe(pr['title'])}\n"
-                f"By {person(pr['author'], names)} · merged by {person(pr['merger'], names)}"
+REPORTING_MESSAGE = "Release reporting turned on; no change to the product."
+ENROLLMENT_FILES = {
+    ".github/workflows/labs-releases.yml",
+    "scripts/releases/post.py",
+    "scripts/releases/names.json",
+    "scripts/releases/repositories.json",
+}
+
+
+def description_sections(body):
+    """Keep descriptive prose, not test instructions, templates, links or code."""
+    body = re.sub(r"<!--.*?-->", "", body or "", flags=re.S)
+    sections = {}
+    heading = ""
+    fenced = False
+    for raw in body.splitlines():
+        if raw.strip().startswith(("```", "~~~")):
+            fenced = not fenced
+            continue
+        if fenced:
+            continue
+        match = re.match(r"^\s*#{1,6}\s+(.+?)\s*#*\s*$", raw)
+        if match:
+            heading = re.sub(r"[^a-z ]", "", match[1].lower()).strip()
+            continue
+        if re.match(r"^\s*[-*]\s*\[[ xX]\]", raw):
+            continue
+        text = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", raw)
+        text = re.sub(r"https?://\S+", "", text)
+        text = re.sub(r"^\s*(?:[-*+]\s+|\d+[.)]\s+)", "", text).strip()
+        text = re.sub(r"[*_`]", "", text)
+        if len(text) < 12 or re.match(
+            r"^(?:n/?a|none|todo|describe |add (?:a |your )?description|no description)",
+            text,
+            re.I,
+        ):
+            continue
+        if any(
+            word in heading
+            for word in ("test", "validat", "evidence", "rollback", "checklist", "implementation")
+        ):
+            continue
+        sections.setdefault(heading, []).append(text)
+    return sections
+
+
+def description_field(sections, headings):
+    for heading in headings:
+        if sections.get(heading):
+            return " ".join(sections[heading])[:650]
+    return ""
+
+
+def prose_excerpt(text, limit):
+    if len(text) <= limit:
+        return text
+    return text[:limit].rsplit(" ", 1)[0].rstrip(".,;:") + "…"
+
+
+def change_description(pr):
+    files = pr.get("files", [])
+    complete = pr.get("files_complete", False) and bool(files)
+    enrollment = (
+        complete
+        and all(path in ENROLLMENT_FILES for path in files)
+        and bool(
+            re.search(
+                r"report (?:main )?merges|(?:enable|connect|turn on).*release reporting",
+                pr["title"],
+                re.I,
             )
         )
+    )
+    reporting = complete and all(
+        path.startswith(("scripts/releases/", ".github/workflows/releases-"))
+        or path in ENROLLMENT_FILES
+        or path == "RELEASES_SMOKE_TEST.md"
+        or path.startswith("docs/plans/release-message-")
+        for path in files
+    )
+    internal = complete and all(
+        path.startswith((".github/", "tests/", "docs/"))
+        or path in {"README.md", "AGENTS.md", "CLAUDE.md"}
+        for path in files
+    )
+    sections = description_sections(pr.get("body"))
+    outcome = description_field(
+        sections,
+        (
+            "reviewed release description",
+            "release description",
+            "release outcome",
+            "outcome",
+            "result",
+            "resulting behavior",
+            "what changed",
+            "changes",
+            "change",
+            "summary",
+        ),
+    )
+    if not outcome:
+        outcome = description_field(sections, ("",))
+    problem = description_field(sections, ("previous problem", "problem", "before", "trigger"))
+    audience = description_field(
+        sections, ("who benefits", "who is affected", "affected people", "audience", "users")
+    )
+    benefit = description_field(sections, ("why", "why it matters", "benefit", "benefits"))
+    if enrollment:
+        return {
+            "outcome": REPORTING_MESSAGE,
+            "audience": "The team following releases.",
+            "benefit": "",
+            "product_change": False,
+            "enrollment": True,
+        }
+    if internal and all(path.startswith((".github/", "tests/")) for path in files):
+        return {
+            "outcome": "Build checks or release automation changed; no change to the product.",
+            "audience": "The team maintaining builds and releases.",
+            "benefit": "",
+            "product_change": False,
+            "enrollment": False,
+        }
+    if not outcome:
+        title = re.sub(
+            r"^(?:feat|fix|chore|docs|test|ci|refactor)(?:\([^)]*\))?:\s*",
+            "",
+            pr["title"],
+            flags=re.I,
+        )
+        scope = ", ".join(dict.fromkeys(path.split("/")[0] for path in files))
+        outcome = f"Update described as: {title}."
+        if scope:
+            outcome += f" Changed scope: {scope}."
+        outcome += " The effect on people was not described."
+    elif problem and problem not in outcome:
+        outcome = prose_excerpt(problem, 150).rstrip(".") + ". " + prose_excerpt(outcome, 350)
+    if not audience and (reporting or internal):
+        audience = "The team maintaining documentation, builds and release reporting."
+    return {
+        "outcome": outcome,
+        "audience": audience,
+        "benefit": benefit,
+        "example": description_field(sections, ("example", "useful example")),
+        "product_change": not (reporting or internal),
+        "enrollment": False,
+    }
+
+
+def describe_pr(repo, pr):
+    """Optional detail failures degrade to honest wording, never invented impact."""
+    details = {"body": pr.get("body") or "", "files": [], "files_complete": False}
+    try:
+        full = pr if "changed_files" in pr else api(f"repos/{repo}/pulls/{pr['number']}")
+        details["body"] = full.get("body") or details["body"]
+        files = list(pages(f"repos/{repo}/pulls/{pr['number']}/files"))
+        details["files"] = [file["filename"] for file in files]
+        details["files_complete"] = len(files) == full["changed_files"]
+    except Exception:
+        print(
+            "::warning::Optional PR description/file detail unavailable; impact stays unconfirmed."
+        )
+    return details
+
+
+def render(record, names, channel):
+    kind = record["kind"]
+    color = {"merge": "#2f7ed8", "production": "#2eb67d", "rollback": "#e01e5a"}[kind]
+    prs = [record["pr"]] if kind == "merge" else record.get("prs", [])
+    descriptions = [change_description(pr) for pr in prs]
+    lead_index = 0
+    if kind == "production":
+        lead_index = next((i for i, d in enumerate(descriptions) if d["product_change"]), 0)
+    enrollment_only = bool(descriptions) and all(d["enrollment"] for d in descriptions)
+    product_unchanged = bool(descriptions) and all(not d["product_change"] for d in descriptions)
+    if kind == "merge":
+        state = "Merged to " + safe(record.get("branch", "main"), 100)
+        state += "; this post does not confirm a production deployment."
+    elif kind == "rollback":
+        state = "Rolled back in production."
     else:
-        if kind == "rollback":
-            blocks.append(
-                section(
-                    f"Rolled back to `{safe(record['sha'], 40)}`\n"
-                    f"Reason: {safe(record['reason'], 1000)}"
-                )
-            )
+        state = "Production deployment completed." if product_unchanged else "Live in production."
+    if product_unchanged and not enrollment_only:
+        state += " No product behavior changed."
+    if kind == "rollback":
+        outcome = "Production was restored to an earlier version. " + record["reason"]
+    elif enrollment_only:
+        outcome = REPORTING_MESSAGE
+    elif descriptions:
+        outcome = descriptions[lead_index]["outcome"]
+    else:
+        outcome = "A production deployment completed, but its effect on people is not described."
+    blocks = [section(safe(outcome, 550)), section(f"*Status:* {state}")]
+    if not descriptions and record.get("notice"):
+        blocks.append(section(safe(record["notice"], 400)))
+    audiences = list(dict.fromkeys(d["audience"] for d in descriptions if d["audience"]))
+    if audiences:
+        blocks.append(section("*Who is affected:* " + safe(" ".join(audiences), 350)))
+    elif descriptions:
+        blocks.append(section("Who is affected is not specified in the release description."))
+    if descriptions and descriptions[lead_index]["benefit"]:
+        blocks.append(
+            section("*Why it matters:* " + safe(descriptions[lead_index]["benefit"], 400))
+        )
+    if descriptions and descriptions[lead_index].get("example"):
+        blocks.append(section("*Example:* " + safe(descriptions[lead_index]["example"], 400)))
+    if kind != "merge" and not enrollment_only:
         groups = {}
-        for pr in record.get("prs", []):
-            # Checked-in PR labels provide stable areas; titles remain exact.
+        for index, pr in enumerate(prs):
+            if index == lead_index:
+                continue
+            description = descriptions[index]
             area = next(
                 (x[5:] for x in pr.get("labels", []) if x.startswith("area:")), "Engineering"
             )
-            groups.setdefault(area, []).append(pr)
-        if groups:
-            blocks.append(section("*What's new*"))
-            for count, (area, prs) in enumerate(groups.items()):
-                if count >= 35:
-                    break
-                lines = [f"*{safe(area, 80)}*"]
-                for pr in prs[:8]:
-                    lines.append(
-                        f"• {safe(pr['title'], 220)} "
-                        f"({link(pr['url'], '#' + str(pr['number']))}, "
-                        f"{person(pr['author'], names)})"
-                    )
-                if len(prs) > 8:
-                    lines.append(f"• {len(prs) - 8} more changes; see full comparison")
-                blocks.append(section("\n".join(lines)[:2900]))
-        else:
-            blocks.append(section(record.get("notice", "No merged PRs in this deployment range.")))
-        blocks.append(
-            section(f"Deployed by {person(record['actor'], names)} · `{safe(record['sha'][:12])}`")
+            groups.setdefault(area, []).append(description["outcome"])
+        for count, (area, outcomes) in enumerate(groups.items()):
+            if count >= 12:
+                break
+            for text in outcomes[:3]:
+                blocks.append(section(f"*{safe(area, 60)}*\n{safe(text, 450)}"))
+    refs = [safe(record["repo"], 150)]
+    if record.get("target"):
+        refs.append(safe(record["target"], 100))
+    if kind == "merge":
+        refs.extend(
+            [
+                f"By {person(prs[0]['author'], names)}",
+                f"merged by {person(prs[0]['merger'], names)}",
+            ]
         )
-    refs = [link(record["run_url"], "Run")]
-    if record.get("compare_url"):
-        refs.append(link(record["compare_url"], "Full changes"))
+    else:
+        refs.append(f"Deployed by {person(record['actor'], names)}")
     blocks.append({"type": "context", "elements": [{"type": "mrkdwn", "text": " · ".join(refs)}]})
+    evidence = [link(pr["url"], "#" + str(pr["number"])) for pr in prs[:8]]
+    evidence.append(link(record["run_url"], "Run"))
+    if record.get("compare_url"):
+        evidence.append(link(record["compare_url"], "Full changes"))
+    blocks.append(
+        {"type": "context", "elements": [{"type": "mrkdwn", "text": " · ".join(evidence)}]}
+    )
     return {
         "channel": channel,
-        "text": heading,
+        "text": safe(outcome, 550) + " " + state,
         "parse": "none",
         "link_names": False,
         "unfurl_links": False,
@@ -211,6 +392,7 @@ def production_record(repo, run, target):
                         "url": f"https://github.com/{repo}/pull/{pr['number']}",
                         "author": pr["user"]["login"],
                         "labels": [x["name"] for x in pr.get("labels", [])],
+                        **describe_pr(repo, pr),
                     }
                 )
     return record
@@ -241,6 +423,7 @@ def records(event, repo, config):
                     "url": f"https://github.com/{repo}/pull/{pr['number']}",
                     "author": pr["user"]["login"],
                     "merger": pr["merged_by"]["login"],
+                    **describe_pr(repo, pr),
                 },
                 "run_url": f"https://github.com/{repo}/actions/runs/{run_id}",
                 "key": f"{repo}:merge:{pr['number']}:{pr['merge_commit_sha']}",
