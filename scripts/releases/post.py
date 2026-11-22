@@ -176,7 +176,11 @@ def change_description(pr):
             "product_change": False,
             "enrollment": True,
         }
-    if internal and all(path.startswith((".github/", "tests/")) for path in files):
+    if (
+        internal
+        and not reporting
+        and all(path.startswith((".github/", "tests/")) for path in files)
+    ):
         return {
             "outcome": "Build checks or release automation changed; no change to the product.",
             "audience": "The team maintaining builds and releases.",
